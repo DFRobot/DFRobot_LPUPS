@@ -1,0 +1,27 @@
+#######################################
+# Syntax Coloring Map For DFRobot_LPUPS
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+DFRobot_LPUPS	KEYWORD1
+DFRobot_LPUPS_I2C	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+getChipData	KEYWORD2
+setMaxChargeVoltage	KEYWORD2
+
+
+#######################################
+# Instances (KEYWORD3)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
