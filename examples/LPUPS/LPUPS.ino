@@ -73,7 +73,6 @@ byte iFullChargeCapacity = 100;
 byte iRemaining =0, iPrevRemaining=100;
 int iRes=0;
 
-uint16_t maxChargeVoltage = 11800;
 
 void setup(void)
 {
@@ -97,8 +96,8 @@ void setup(void)
    * @param data Maximum charging voltage, range from 11100 to 12600 mV
    * @return None
    */
-  maxChargeVoltage = 11800;
-  LPUPS.setMaxChargeVoltage(maxChargeVoltage);
+  // maxChargeVoltage = 11800;
+  // LPUPS.setMaxChargeVoltage(maxChargeVoltage);
 
   // Initialize HIDPowerDevice
   initPowerDevice();
