@@ -5,8 +5,8 @@
  * @copyright  Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license  The MIT License (MIT)
  * @author  [qsjhyy](yihuan.huang@dfrobot.com)
- * @version  V1.0
- * @date  2022-11-23
+ * @version  V1.1
+ * @date  2023-08-09
  * @url  https://github.com/DFRobot/DFRobot_LPUPS
  */
 #include <DFRobot_LPUPS.h>
