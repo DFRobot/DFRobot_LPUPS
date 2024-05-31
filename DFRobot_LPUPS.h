@@ -16,7 +16,7 @@
 #include <Wire.h>
 
 
-#define ENABLE_DBG   //!< Open this macro and you can see the details of the program
+// #define ENABLE_DBG   //!< Open this macro and you can see the details of the program
 #ifdef ENABLE_DBG
   #define DBG(...) {Serial.print("[");Serial.print(__FUNCTION__); Serial.print("(): "); Serial.print(__LINE__); Serial.print(" ] "); Serial.println(__VA_ARGS__);}
 #else
@@ -25,7 +25,8 @@
 
 
 #define UPS_I2C_ADDRESS   0X55
-#define UPS_PID_VALUE     0X42AA   //!< PID: The PID (Product Identifier) for the module is DFR0682. The highest two bits of the PID are used to determine the category: 00 for SEN, 01 for DFR, 10 for TEL, and 11 for BOS. The remaining 14 bits are used as the num.
+#define THREE_BATTERIES_UPS_PID   0X42AA   //!< PID: The PID (Product Identifier) for the module is DFR0682. The highest two bits of the PID are used to determine the category: 00 for SEN, 01 for DFR, 10 for TEL, and 11 for BOS. The remaining 14 bits are used as the num.
+#define FOUR_BATTERIES_UPS_PID    0X4447   //!< PID: The PID (Product Identifier) for the module is DFR1095. The highest two bits of the PID are used to determine the category: 00 for SEN, 01 for DFR, 10 for TEL, and 11 for BOS. The remaining 14 bits are used as the num.
 
 /* LPUPS register address */
 #define CS32_I2C_CHARGER_STATUS_REG   0x00U   //!< 21/20h
@@ -185,12 +186,13 @@ public:
   /**
    * @fn begin
    * @brief Init function
+   * @param upsType What type of ups
    * @return int type, indicates returning init status
    * @retval 0 NO_ERROR
    * @retval -1 ERR_DATA_BUS
    * @retval -2 ERR_IC_VERSION
    */
-  virtual int begin(void);
+  virtual int begin(uint16_t upsType = THREE_BATTERIES_UPS_PID);
 
 /************************** Config function ******************************/
   /**
@@ -204,7 +206,9 @@ public:
   /**
    * @fn setMaxChargeVoltage
    * @brief Set maximum charging voltage.
-   * @param data Maximum charging voltage, 11100 ~ 12600 mV
+   * @param data Maximum charging voltage:
+   * @n          Three batteries: 11100 ~ 12600 mV
+   * @n          Four batteries: 14800 ~ 16800 mV
    * @return None
    */
   void setMaxChargeVoltage(uint16_t data);
@@ -235,6 +239,7 @@ protected:
 
 private:
   // Private variables
+  uint16_t _upsType;
 };
 
 /************************** Init and read/write of I2C and SPI interfaces ******************************/
@@ -254,12 +259,13 @@ public:
   /**
    * @fn begin
    * @brief Subclass init function
+   * @param upsType What type of ups
    * @return int type, indicates returning init status
    * @retval 0 NO_ERROR
    * @retval -1 ERR_DATA_BUS
    * @retval -2 ERR_IC_VERSION
    */
-  virtual int begin(void);
+  virtual int begin(uint16_t upsType=THREE_BATTERIES_UPS_PID);
 
 protected:
   /**

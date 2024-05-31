@@ -59,7 +59,9 @@ There two methods:
   /**
    * @fn setMaxChargeVoltage
    * @brief Set maximum charging voltage.
-   * @param data Maximum charging voltage, 11100 ~ 12600 mV
+   * @param data Maximum charging voltage:
+   * @n          Three batteries: 11100 ~ 12600 mV
+   * @n          Four batteries: 14800 ~ 16800 mV
    * @return None
    */
   void setMaxChargeVoltage(uint16_t data);

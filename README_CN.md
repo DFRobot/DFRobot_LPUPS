@@ -59,7 +59,9 @@
   /**
    * @fn setMaxChargeVoltage
    * @brief 设置最大充电电压
-   * @param data 最大充电电压, 11100 ~ 12600 mV
+   * @param data 最大充电电压:
+   * @n          三节电池的UPS: 11100 ~ 12600 mV
+   * @n          四节电池的UPS: 14800 ~ 16800 mV
    * @return None
    */
   void setMaxChargeVoltage(uint16_t data);

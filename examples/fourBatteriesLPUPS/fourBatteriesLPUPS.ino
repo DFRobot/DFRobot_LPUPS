@@ -1,7 +1,8 @@
 /*!
- * @file  LPUPS.ino
+ * @file  fourBatteriesLPUPS.ino
  * @brief LPUPS reports battery information to the computer via USB-HID
  * @details Reads battery information from UPS via I2C, and reports this information to the computer via USB-HID
+ * @n HIDPowerDevice : https://github.com/abratchik/HIDPowerDevice
  * @copyright  Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license  The MIT License (MIT)
  * @author  [qsjhyy](yihuan.huang@dfrobot.com)
@@ -14,8 +15,16 @@
 
 DFRobot_LPUPS_I2C LPUPS(&Wire, /*I2CAddr*/ UPS_I2C_ADDRESS);
 
+/**
+ * Battery voltage range: 12.3V ~ 16.8V, in order to keep the battery stable at extreme values:
+ * Assuming the battery voltage range is 12.4V ~ 16.7V, corresponding to battery capacity 0 ~ 100.
+ * Note: You can adjust the battery capacity more accurately by correcting the voltage mutation with dischargeCurrent if interested.
+ */
+#define MIN_BATTERY_VOLTAGE   12400   // Lower battery voltage limit
+#define MAX_BATTERY_VOLTAGE   16700   // Upper battery voltage limit
+
 #define DATA_LEN_MAX   0X24U
-uint8_t regBuf[DATA_LEN_MAX] = {0};
+uint8_t regBuf[DATA_LEN_MAX] = { 0 };
 DFRobot_LPUPS_I2C::sChargerStatus0_t chargerStatus0;
 DFRobot_LPUPS_I2C::sChargerStatus1_t chargerStatus1;
 DFRobot_LPUPS_I2C::sProchotStatus0_t prochotStatus0;
@@ -46,14 +55,14 @@ byte bRechargable = 1;   // Rechargeable Battery (1)/Not Rechargeable Battery (0
 byte bCapacityMode = 2;   // In the data manual, "2" represents battery capacity in percentage.
 
 // Physical parameters.
-const uint16_t iConfigVoltage = 13800;   // Nominal value of the voltage.
-uint16_t iVoltage =1300, iPrevVoltage = 0;
+const uint16_t iConfigVoltage = MAX_BATTERY_VOLTAGE;   // Nominal value of the voltage.
+uint16_t iVoltage = MAX_BATTERY_VOLTAGE, iPrevVoltage = 0;
 uint16_t iRunTimeToEmpty = 0, iPrevRunTimeToEmpty = 0;
 uint16_t iAvgTimeToFull = 7200;
 uint16_t iAvgTimeToEmpty = 7200;   // 12
 uint16_t iRemainTimeLimit = 600;   // 1
 /* Writing this value immediately shuts down (i.e., turns off) the output
-   for a period equal to the indicated number of seconds in 
+   for a period equal to the indicated number of seconds in
    DelayBeforeReboot, after which time the output is started. */
 int16_t  iDelayBe4Reboot = -1;
 /* Writing this value shuts down (i.e., turns off) either the output after
@@ -70,8 +79,8 @@ const byte bCapacityGranularity1 = 1; // Battery capacity granularity between lo
 const byte bCapacityGranularity2 = 1; // Battery capacity granularity between warning and full.
 byte iFullChargeCapacity = 100;
 
-byte iRemaining =0, iPrevRemaining=100;
-int iRes=0;
+byte iRemaining = 0, iPrevRemaining = 100;
+int iRes = 0;
 
 
 void setup(void)
@@ -79,7 +88,7 @@ void setup(void)
   Serial.begin(115200);
 
   // Init the sensor
-  while( NO_ERR != LPUPS.begin() ){
+  while (NO_ERR != LPUPS.begin(THREE_BATTERIES_UPS_PID)) {
     Serial.println("Communication with device failed, please check connection");
     delay(3000);
   }
@@ -93,13 +102,15 @@ void setup(void)
   /**
    * @fn setMaxChargeVoltage
    * @brief Set the maximum charging voltage
-   * @param data Maximum charging voltage, range from 11100 to 12600 mV
+   * @param data Maximum charging voltage:
+   * @n          Three batteries: 11100 ~ 12600 mV
+   * @n          Four batteries: 14800 ~ 16800 mV
    * @return None
    */
-  // maxChargeVoltage = 11800;
-  // LPUPS.setMaxChargeVoltage(maxChargeVoltage);
+   // maxChargeVoltage = 15600;
+   // LPUPS.setMaxChargeVoltage(maxChargeVoltage);
 
-  // Initialize HIDPowerDevice
+   // Initialize HIDPowerDevice
   initPowerDevice();
 }
 
@@ -111,38 +122,38 @@ void loop()
 
   /*********** Unit of measurement, measurement unit ****************************/
   /**
-   * Battery voltage range: 9.2V ~ 12.6V, in order to keep the battery stable at extreme values:
-   * Assuming the battery voltage range is 9.3V ~ 12.5V, corresponding to battery capacity 0 ~ 100.
+   * Battery voltage range: 12.3V ~ 16.8V, in order to keep the battery stable at extreme values:
+   * Assuming the battery voltage range is 12.4V ~ 16.7V, corresponding to battery capacity 0 ~ 100.
    * Note: You can adjust the battery capacity more accurately by correcting the voltage mutation with dischargeCurrent if interested.
    */
-  if(batteryVoltage > 9300) {
-    iRemaining = (((float)batteryVoltage - 9300) / (12500 - 9300)) * 100;
+  if (batteryVoltage > MIN_BATTERY_VOLTAGE) {
+    iRemaining = (((float)batteryVoltage - MIN_BATTERY_VOLTAGE) / (MAX_BATTERY_VOLTAGE - MIN_BATTERY_VOLTAGE)) * 100;
   } else {
     Serial.println("The battery voltage is lower than normal !!!");   // Battery voltage lower than normal value.
   }
 
-  if(100 < iRemaining) {
+  if (100 < iRemaining) {
     iRemaining = 100;
   }
 
   // Please ensure to use the dedicated charger for LattePanda and connect it to the UPS (connect it to LP). 
-  if(chargerStatus1.ac_stat) {   // check if there is charging current.
+  if (chargerStatus1.ac_stat) {   // check if there is charging current.
     bACPresent = true;
-    if(64 < chargeCurrent) {   // Check if there is charging current. Due to precision issues, current less than 64 is considered as fully charged.
+    if (64 < chargeCurrent) {   // Check if there is charging current. Due to precision issues, current less than 64 is considered as fully charged.
       bCharging = true;
     } else {
       bCharging = false;
     }
     bDischarging = false;
   } else {
-    if(iPrevRemaining < iRemaining) {
-      if(3 >= (iRemaining - iPrevRemaining))
-      iRemaining = iPrevRemaining;
+    if (iPrevRemaining < iRemaining) {
+      if (3 >= (iRemaining - iPrevRemaining))
+        iRemaining = iPrevRemaining;
     }
 
     bACPresent = false;
     bCharging = false;
-    if(dischargeCurrent) {   // Check if there is discharging current.
+    if (dischargeCurrent) {   // Check if there is discharging current.
       bDischarging = true;
     } else {
       bDischarging = false;
@@ -175,18 +186,17 @@ void loop()
   digitalWrite(13, HIGH);   // 关掉 蓝色 LED灯;
 
   /************ 批量发送或中断 ***********************/
-  if((iPresentStatus != iPreviousStatus) || (iRemaining != iPrevRemaining) || 
-     (iRunTimeToEmpty != iPrevRunTimeToEmpty) || (iIntTimer > MIN_UPDATE_INTERVAL) ) {
+  if ((iPresentStatus != iPreviousStatus) || (iRemaining != iPrevRemaining) ||
+    (iRunTimeToEmpty != iPrevRunTimeToEmpty) || (iIntTimer > MIN_UPDATE_INTERVAL)) {
 
     // 12 INPUT OR FEATURE(required by Windows)
     PowerDevice.sendReport(HID_PD_REMAININGCAPACITY, &iRemaining, sizeof(iRemaining));
-    if(bDischarging) PowerDevice.sendReport(HID_PD_RUNTIMETOEMPTY, &iRunTimeToEmpty, sizeof(iRunTimeToEmpty));
+    if (bDischarging) PowerDevice.sendReport(HID_PD_RUNTIMETOEMPTY, &iRunTimeToEmpty, sizeof(iRunTimeToEmpty));
     iRes = PowerDevice.sendReport(HID_PD_PRESENTSTATUS, &iPresentStatus, sizeof(iPresentStatus));
 
-    if(iRes <0 ) {   // Reporting return value: less than 0 indicates communication loss with the host
+    if (iRes < 0) {   // Reporting return value: less than 0 indicates communication loss with the host
       pinMode(13, INPUT);
-    }
-    else{
+    } else {
       pinMode(13, OUTPUT);
     }
 
@@ -206,6 +216,7 @@ void loop()
   Serial.println(iRes);
   Serial.println();
 }
+
 
 void initPowerDevice(void)
 {
@@ -261,10 +272,10 @@ void printChargeData(void)
   memcpy(&prochotStatus1, &regBuf[CS32_I2C_PROCHOT_STATUS_REG + 1], sizeof(regBuf[CS32_I2C_PROCHOT_STATUS_REG + 1]));
   memset(outputBuf, 0, sizeof(outputBuf));
   sprintf(outputBuf, "Charge status register 0 = %#x\r\n"
-                     "Charge status register 1 = %#x\r\n"
-                     "Prochot status register 0 = %#x\r\n"
-                     "Prochot status register 1 = %#x\r\n", 
-          regBuf[CS32_I2C_CHARGER_STATUS_REG], regBuf[CS32_I2C_CHARGER_STATUS_REG + 1], regBuf[CS32_I2C_PROCHOT_STATUS_REG], regBuf[CS32_I2C_PROCHOT_STATUS_REG + 1]);
+    "Charge status register 1 = %#x\r\n"
+    "Prochot status register 0 = %#x\r\n"
+    "Prochot status register 1 = %#x\r\n",
+    regBuf[CS32_I2C_CHARGER_STATUS_REG], regBuf[CS32_I2C_CHARGER_STATUS_REG + 1], regBuf[CS32_I2C_PROCHOT_STATUS_REG], regBuf[CS32_I2C_PROCHOT_STATUS_REG + 1]);
   Serial.print(outputBuf);
 
   /*************** CS32_I2C_ADC_PSYS_REG ~ CS32_I2C_ADC_VSYS_REG ***************/
@@ -272,7 +283,7 @@ void printChargeData(void)
   systemPower = regBuf[CS32_I2C_ADC_PSYS_REG] * 12;
   // VBUS: Full range: 3.2 V - 19.52 V, LSB: 64 mV
   inputVoltage = 3200 + regBuf[CS32_I2C_ADC_VBUS_REG] * 64;
-  if(3200 == inputVoltage) {
+  if (3200 == inputVoltage) {
     inputVoltage = 0;
   }
   // IDCHG: Full range: 32.512 A, LSB: 256 mA
@@ -285,31 +296,31 @@ void printChargeData(void)
   inputCurrent = regBuf[CS32_I2C_ADC_IIN_REG] * 50;
   // VBAT: Full range : 2.88 V - 19.2 V, LSB 64 mV
   batteryVoltage = 2880 + regBuf[CS32_I2C_ADC_VBAT_REG] * 64;
-  if(2880 == batteryVoltage) {
+  if (2880 == batteryVoltage) {
     batteryVoltage = 0;
   }
   // VSYS: Full range: 2.88 V - 19.2 V, LSB: 64 mV
   systemVoltage = 2880 + regBuf[CS32_I2C_ADC_VSYS_REG] * 64;
-  if(2880 == systemVoltage) {
+  if (2880 == systemVoltage) {
     systemVoltage = 0;
   }
   // VSYS: Full range: 2.88 V - 19.2 V, LSB: 64 mV
   systemVoltage = 2880 + regBuf[CS32_I2C_ADC_VSYS_REG] * 64;
-  if(2880 == systemVoltage) {
+  if (2880 == systemVoltage) {
     systemVoltage = 0;
   }
   maxChargeVoltage = LPUPS_CONCAT_BYTES(regBuf[CS32_I2C_SET_VBAT_LIMIT_REG + 1], regBuf[CS32_I2C_SET_VBAT_LIMIT_REG]);
   memset(outputBuf, 0, sizeof(outputBuf));
   sprintf(outputBuf, "8-bit Digital Output of System Power = %u mV\r\n"
-                     "8-bit Digital Output of Input Voltage = %u mV\r\n"
-                     "8-bit digital output of battery discharge current = %u mA\r\n"
-                     "8-bit digital output of battery charge current = %u mA\r\n"
-                     "8-bit digital output of CMPIN voltage = %u mV\r\n"
-                     "8-bit digital output of input current = %u mA\r\n"
-                     "8-bit digital output of battery voltage = %u mV\r\n"
-                     "8-bit digital output of system voltage = %u mV\r\n"
-                     "The max charge voltage = %u mV\r\n", 
-          systemPower, inputVoltage, dischargeCurrent, chargeCurrent, CMPINVoltage, inputCurrent, batteryVoltage, systemVoltage, maxChargeVoltage);
+    "8-bit Digital Output of Input Voltage = %u mV\r\n"
+    "8-bit digital output of battery discharge current = %u mA\r\n"
+    "8-bit digital output of battery charge current = %u mA\r\n"
+    "8-bit digital output of CMPIN voltage = %u mV\r\n"
+    "8-bit digital output of input current = %u mA\r\n"
+    "8-bit digital output of battery voltage = %u mV\r\n"
+    "8-bit digital output of system voltage = %u mV\r\n"
+    "The max charge voltage = %u mV\r\n",
+    systemPower, inputVoltage, dischargeCurrent, chargeCurrent, CMPINVoltage, inputCurrent, batteryVoltage, systemVoltage, maxChargeVoltage);
   Serial.print(outputBuf);
 
 }
@@ -317,53 +328,53 @@ void printChargeData(void)
 void flashReportedData(void)
 {
   // Charging status
-  if(bCharging) 
-    bitSet(iPresentStatus,PRESENTSTATUS_CHARGING);
+  if (bCharging)
+    bitSet(iPresentStatus, PRESENTSTATUS_CHARGING);
   else
-    bitClear(iPresentStatus,PRESENTSTATUS_CHARGING);
+    bitClear(iPresentStatus, PRESENTSTATUS_CHARGING);
 
   // AC power supply
-  if(bACPresent) 
-    bitSet(iPresentStatus,PRESENTSTATUS_ACPRESENT);
+  if (bACPresent)
+    bitSet(iPresentStatus, PRESENTSTATUS_ACPRESENT);
   else
-    bitClear(iPresentStatus,PRESENTSTATUS_ACPRESENT);
+    bitClear(iPresentStatus, PRESENTSTATUS_ACPRESENT);
 
   // Fully charged
-  if(iRemaining == iFullChargeCapacity) 
-    bitSet(iPresentStatus,PRESENTSTATUS_FULLCHARGE);
-  else 
-    bitClear(iPresentStatus,PRESENTSTATUS_FULLCHARGE);
+  if (iRemaining == iFullChargeCapacity)
+    bitSet(iPresentStatus, PRESENTSTATUS_FULLCHARGE);
+  else
+    bitClear(iPresentStatus, PRESENTSTATUS_FULLCHARGE);
 
   // Discharging
-  if(bDischarging) {   // Not charging
-    bitSet(iPresentStatus,PRESENTSTATUS_DISCHARGING);
+  if (bDischarging) {   // Not charging
+    bitSet(iPresentStatus, PRESENTSTATUS_DISCHARGING);
     // if(iRemaining < iRemnCapacityLimit) bitSet(iPresentStatus,PRESENTSTATUS_BELOWRCL);   // Below remaining capacity limit.
 
     // Exceeded runtime/capacity limit.
-    if(iRunTimeToEmpty < iRemainTimeLimit) 
+    if (iRunTimeToEmpty < iRemainTimeLimit)
       bitSet(iPresentStatus, PRESENTSTATUS_RTLEXPIRED);
     else
       bitClear(iPresentStatus, PRESENTSTATUS_RTLEXPIRED);
 
   } else {
-    bitClear(iPresentStatus,PRESENTSTATUS_DISCHARGING);
+    bitClear(iPresentStatus, PRESENTSTATUS_DISCHARGING);
     bitClear(iPresentStatus, PRESENTSTATUS_RTLEXPIRED);   // Clearing relevant flags during charging.
   }
 
   // Shutdown request.
-  if(iDelayBe4ShutDown > 0 ) {
-      bitSet(iPresentStatus, PRESENTSTATUS_SHUTDOWNREQ);
-      Serial.println("shutdown requested");
+  if (iDelayBe4ShutDown > 0) {
+    bitSet(iPresentStatus, PRESENTSTATUS_SHUTDOWNREQ);
+    Serial.println("shutdown requested");
   } else
     bitClear(iPresentStatus, PRESENTSTATUS_SHUTDOWNREQ);
 
   // Shutdown imminent.
-  if((iPresentStatus & (1 << PRESENTSTATUS_SHUTDOWNREQ)) || 
-     (iPresentStatus & (1 << PRESENTSTATUS_RTLEXPIRED))) {
+  if ((iPresentStatus & (1 << PRESENTSTATUS_SHUTDOWNREQ)) ||
+    (iPresentStatus & (1 << PRESENTSTATUS_RTLEXPIRED))) {
     bitSet(iPresentStatus, PRESENTSTATUS_SHUTDOWNIMNT);   // - Shutdown imminent.
     Serial.println("shutdown imminent");
   } else
     bitClear(iPresentStatus, PRESENTSTATUS_SHUTDOWNIMNT);
 
-  bitSet(iPresentStatus ,PRESENTSTATUS_BATTPRESENT);   // - Power BATT
+  bitSet(iPresentStatus, PRESENTSTATUS_BATTPRESENT);   // - Power BATT
 }
