@@ -88,7 +88,7 @@ void setup(void)
   Serial.begin(115200);
 
   // Init the sensor
-  while (NO_ERR != LPUPS.begin(THREE_BATTERIES_UPS_PID)) {
+  while (NO_ERR != LPUPS.begin(FOUR_BATTERIES_UPS_PID)) {
     Serial.println("Communication with device failed, please check connection");
     delay(3000);
   }
