@@ -26,7 +26,9 @@ int iIntTimer = 0; // Update interval counter
 
 void setup(void)
 {
+  delay(5000);
   Serial.begin(115200);
+  Serial.println("Serial Begin"); //Avoid serial port not working
 
   // Init the sensor
   while (NO_ERR != LPUPS.begin(THREE_BATTERIES_UPS_PID)) {
