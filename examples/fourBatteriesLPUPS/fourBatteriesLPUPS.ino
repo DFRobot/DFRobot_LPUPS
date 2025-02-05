@@ -2,7 +2,6 @@
  * @file  fourBatteriesLPUPS.ino
  * @brief LPUPS reports battery information to the computer via USB-HID
  * @details Reads battery information from UPS via I2C, and reports this information to the computer via USB-HID
- * @n HIDPowerDevice : https://github.com/abratchik/HIDPowerDevice
  * @copyright  Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license  The MIT License (MIT)
  * @author  [qsjhyy](yihuan.huang@dfrobot.com)
