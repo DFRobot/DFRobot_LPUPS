@@ -27,12 +27,8 @@ A UPS for LP, providing corresponding power supply for LP's equipment.
 
 ## Installation
 
-There two methods:
-
-0. This library uses HID and depends on the HIDPowerDevice library (https://github.com/abratchik/HIDPowerDevice). To install and run this library, you must also install its dependencies.
 1. To use this library, first download the library file, paste it into the \Arduino\libraries directory, then open the examples folder and run the demo in the folder.
 2. Search the DFRobot_LPUPS library from the Arduino Software Library Manager and download it.
-
 
 ## Methods
 
@@ -85,4 +81,6 @@ Arduino Leonardo   |      √       |              |             |
 ## Credits
 
 Written by qsjhyy(yihuan.huang@dfrobot.com), 2022. (Welcome to our [website](https://www.dfrobot.com/))
+
+The library includes code from the [HIDPowerDevice library](https://github.com/abratchik/HIDPowerDevice) originally Written by abratchik .
 
