@@ -29,10 +29,8 @@
 
 这里有2种安装方法：
 
-0. 这个库用使用HID, 依赖于HIDPowerDevice(https://github.com/abratchik/HIDPowerDevice)这个库, 安装运行此库必须安装他的依赖库。
 1. 使用此库前，请首先下载库文件，将其粘贴到\Arduino\libraries目录中，然后打开examples文件夹并在该文件夹中运行演示。
 2. 直接在Arduino软件库管理中搜索下载 DFRobot_LPUPS 库。
-
 
 ## 方法
 
@@ -86,3 +84,4 @@ Arduino Leonardo   |      √       |              |             |
 
 Written by qsjhyy(yihuan.huang@dfrobot.com), 2022. (Welcome to our [website](https://www.dfrobot.com/))
 
+The library includes code from the [HIDPowerDevice library](https://github.com/abratchik/HIDPowerDevice) originally Written by abratchik .
