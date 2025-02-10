@@ -27,6 +27,8 @@ A UPS for LP, providing corresponding power supply for LP's equipment.
 
 ## Installation
 
+There two methods:
+
 1. To use this library, first download the library file, paste it into the \Arduino\libraries directory, then open the examples folder and run the demo in the folder.
 2. Search the DFRobot_LPUPS library from the Arduino Software Library Manager and download it.
 
